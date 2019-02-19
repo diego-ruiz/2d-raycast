@@ -11,14 +11,15 @@ public class Controller2D : MonoBehaviour
     public int horizontalRayCount = 4;
     public int verticalRayCount = 4;
 
+    float maxClimbAngle = 75;
+    float maxDescendAngle = 75;
+
     float horizontalRaySpacing;
     float verticalRaySpacing;
 
     BoxCollider2D collider;
     RaycastOrigins raycastOrigins;
     public CollisionInfo collisions;
-    float maxClimbAngle = 75;
-    float maxDescendAngle = 75;
 
     private void Start()
     {
@@ -31,6 +32,7 @@ public class Controller2D : MonoBehaviour
         UpdateRaycastOrigins();
         collisions.Reset();
         collisions.velocityOld = velocity;
+
         if (velocity.y < 0 ){
             DescendSlope(ref velocity);
         }
@@ -47,18 +49,21 @@ public class Controller2D : MonoBehaviour
 
     void HorizontalCollisions(ref Vector3 velocity)
     {
-        float directionX = Mathf.Sign(velocity.x);
-        float rayLength = Mathf.Abs(velocity.x) + skinWidth;
+        float directionX = Mathf.Sign (velocity.x);
+        float rayLength = Mathf.Abs (velocity.x) + skinWidth;
 
         for (int i = 0; i < horizontalRayCount; i++)
         {
             Vector2 rayOrigin = (directionX == -1) ? raycastOrigins.bottomLeft : raycastOrigins.bottomRight;
             rayOrigin += Vector2.up * (horizontalRaySpacing * i);
             RaycastHit2D hit = Physics2D.Raycast(rayOrigin, Vector2.right * directionX, rayLength, collisionMask);
+
             Debug.DrawRay(rayOrigin, Vector2.right * directionX * rayLength, Color.red);
 
             if (hit) {
+
                 float slopeAngle = Vector2.Angle(hit.normal, Vector2.up);
+
                 if (i == 0 && slopeAngle <= maxClimbAngle) {
                     if (collisions.descendingSlope) {
                         collisions.descendingSlope = false;
@@ -109,18 +114,15 @@ public class Controller2D : MonoBehaviour
 
                 if (collisions.climbingSlope)
                 {
-                    //Debug.Log("old x vel " + velocity.x);
-                    float oldVelX = velocity.x;
                     velocity.x = velocity.y / (Mathf.Tan(collisions.slopeAngle * Mathf.Deg2Rad) * Mathf.Sign(velocity.x));
-                    Debug.Log(oldVelX + " | " + velocity.x);
-                }
-
-                //if (Mathf.Abs(velocity.y) < .01f) {
-                //    velocity.y = 0;
-                //}
+                } 
 
                 collisions.below = directionY == -1;
                 collisions.above = directionY == 1;
+
+                if (Mathf.Abs(velocity.y) < 0.015f) {
+                    velocity.y = 0;
+                }
             }
         }
 
